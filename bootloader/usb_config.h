@@ -20,7 +20,7 @@
 #define USB_PIN_DP 3   // [0-4] GPIO Number for USB D+ Pin
 #define USB_PIN_DM 4   // [0-4] GPIO Number for USB D- Pin
 //#define USB_PORT_DPU A  // [A,C,D] Override GPIO Port for DPU
-#define USB_PIN_DPU 5  // [0-7] GPIO for feeding the 1.5k Pull-Up on USB D- Pin; Comment out if not used / tied to 3V3!
+// #define USB_PIN_DPU 5  // [0-7] GPIO for feeding the 1.5k Pull-Up on USB D- Pin; Comment out if not used / tied to 3V3!
 
 #define RV003USB_OPTIMIZE_FLASH 1
 
@@ -39,8 +39,8 @@ static const uint8_t device_descriptor[] = {
 	0x0, //Device Protocol  (000 = use config descriptor)
 	0x08, //Max packet size for EP0 (This has to be 8 because of the USB Low-Speed Standard)
 	0x09, 0x12, //ID Vendor   //TODO: register this in http://pid.codes/howto/ or somewhere.
-	0x03, 0xb0, //ID Product
-	0x02, 0x00, //ID Rev
+	0x03, 0xb8, //ID Product
+	0x40, 0x01, //ID Rev
 	1, //Manufacturer string
 	2, //Product string
 	3, //Serial string
@@ -73,7 +73,7 @@ static const uint8_t config_descriptor[] = {  //Mostly stolen from a USB mouse I
 	0x01,					// bConfigurationValue
 	0x00,					// iConfiguration
 	0x80,					// bmAttributes (was 0xa0)
-	0x64,					// bMaxPower (200mA)
+	0xFA,					// bMaxPower (500mA)
 
 
 	//HID THING
@@ -106,9 +106,9 @@ static const uint8_t config_descriptor[] = {  //Mostly stolen from a USB mouse I
 
 //Ever wonder how you have more than 6 keys down at the same time on a USB keyboard?  It's easy. Enumerate two keyboards!
 
-#define STR_MANUFACTURER u"cnlohr"
-#define STR_PRODUCT      u"rv003usb"
-#define STR_SERIAL       u"NBTT" // Need to change to BOOT when we finally decide on a flashing mechanism.
+#define STR_MANUFACTURER u""
+#define STR_PRODUCT      u"32V003"
+#define STR_SERIAL       u""
 
 struct usb_string_descriptor_struct {
 	uint8_t bLength;

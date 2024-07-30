@@ -40,11 +40,11 @@
 
 // Timeout for bootloader after power-up, set to 0 to stay in bootloader forever
 // 75ms per unit; 67 ~= 5s
-#define BOOTLOADER_TIMEOUT_PWR 67
+#define BOOTLOADER_TIMEOUT_PWR 7
 
 // Timeout (reset) for bootloader once USB Host is detected, set to 0 to stay in bootloader forever
 // 75ms per unit; 0 costs 28 Bytes, >0 costs 48 Bytes; Comment out if not used
-//#define BOOTLOADER_TIMEOUT_USB 0
+#define BOOTLOADER_TIMEOUT_USB 0
 
 // Timeout Timebase; Careful: Constant works out to a single lbu instruction. Changes may result in bigger code
 // -0x100000 = 302ms; -0x040000 = 75ms;
@@ -212,6 +212,9 @@ int main()
 
 	// enable interrupt
 	NVIC_EnableIRQ( EXTI7_0_IRQn );
+
+	if (!(RCC->RSTSCKR & (1<<26)))
+		boot_usercode();
 
 	// Bootloader timeout / localpad: 
 	// localpad counting up to 0 is used for timeout

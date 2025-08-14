@@ -77,6 +77,7 @@ And the following largely incomplete, but proof-of-concept projects:
 | Example      | Description | ❖ | 🐧 |
 | ------------ | ----------- | --------------- | ------------- |
 | [cdc_exp](https://github.com/cnlohr/rv003usb/tree/master/testing/cdc_exp) | Enumerate as a USB Serial port and send and receive Data (incomplete, very simple) | `⚠️` | `✅` | :question: |
+| [usb_cdc_uart](https://github.com/cnlohr/rv003usb/tree/master/testing/usb_cdc_uart) | Enumerate as a USB to UART bridge (115200 baud) (very similar issues to cdc_exp, only slightly more complete, tested on linux) | `⚠️` | `✅` | :question: |
 | [demo_midi](https://github.com/cnlohr/rv003usb/tree/master/testing/demo_midi) | MIDI-IN and MIDI-OUT | `✅` | `✅` |
 | [test_ethernet](https://github.com/cnlohr/rv003usb/tree/master/testing/test_ethernet) | RNDIS Device (note: VERY SLOW) | `⚠️` | `✅` |
 
@@ -116,10 +117,11 @@ This project is not ready for prime time, though it is sort of in a beta phase. 
 `✅` Use HID custom messages.  
 `✅` Improve sync sled.  I.e. coarse and fine sledding.  
 `✅` Abort on non-8-bit-aligned-frames.  
-`🔳` Make more demos  
-`🔳` API For self-flashing + printf from bootloader  
+`✅` Make more demos  
+`✅` API For self-flashing + `🔳` printf from bootloader  
 `🔳` Improve timing on send, for CRC bits.  Currently we are off by about 6 cycles total.  
-`❕` Further optimize Send/Receive PHY code. (Please help)  
+`❕` Further optimize Send/Receive PHY code. (Please help) 
+`❕` Consider a timer-only approach (may never happen)
 `⚠️` Enable improved retiming (Requires a few more cycles) (Please help!)  
 `⚠️`  Arduino support (someone else will have to take this on)  
 

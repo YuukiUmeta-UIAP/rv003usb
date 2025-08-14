@@ -33,14 +33,14 @@
 static const uint8_t device_descriptor[] = {
 	18, //Length
 	1,  //Type (Device)
-	0x10, 0x01, //Spec
+	0x00, 0x02, //Spec (bcdUSB)
 	0x0, //Device Class
 	0x0, //Device Subclass
 	0x0, //Device Protocol  (000 = use config descriptor)
 	0x08, //Max packet size for EP0 (This has to be 8 because of the USB Low-Speed Standard)
 	0x09, 0x12, //ID Vendor   //TODO: register this in http://pid.codes/howto/ or somewhere.
 	0x03, 0xb8, //ID Product
-	0x40, 0x01, //ID Rev
+	0x41, 0x01, //ID Rev
 	1, //Manufacturer string
 	2, //Product string
 	3, //Serial string
@@ -83,7 +83,7 @@ static const uint8_t config_descriptor[] = {  //Mostly stolen from a USB mouse I
 	0,					// bAlternateSetting
 	1,					// bNumEndpoints
 	0x03,					// bInterfaceClass (0x03 = HID)
-	0xff,					// bInterfaceSubClass
+	0x00,					// bInterfaceSubClass
 	0xff,					// bInterfaceProtocol
 	0,					// iInterface
 

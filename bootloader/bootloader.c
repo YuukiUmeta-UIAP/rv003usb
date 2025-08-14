@@ -2,7 +2,7 @@
 #define SYSTEM_CORE_CLOCK 48000000
 #define SYSTICK_USE_HCLK
 
-#include "ch32v003fun.h"
+#include "ch32fun.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -50,6 +50,21 @@
 // -0x100000 = 302ms; -0x040000 = 75ms;
 #define BOOTLOADER_TIMEOUT_BASE -0x40000
 
+// Uncomment to be able to reboot into bootloader from firmware without pressing a button
+// For this to work add a following reboot function to your firmware code:
+// ----------------------------------
+// FLASH->BOOT_MODEKEYR = 0x45670123;
+// FLASH->BOOT_MODEKEYR = 0xCDEF89AB;
+// FLASH->STATR = 0x4000;
+// RCC->RSTSCKR |= 0x1000000;
+// PFIC->CFGR = 0xBEEF0080;
+// ----------------------------------
+// #define SOFT_REBOOT_TO_BOOTLOADER
+
+#if defined(BOOTLOADER_BTN_PORT) && (0 != BOOTLOADER_TIMEOUT_PWR)
+#warning "BOOTLOADER_BTN_PORT is defined, but BOOTLOADER_TIMEOUT_PWR is not set to 0. Code might not fit"
+#endif
+
 #define SCRATCHPAD_SIZE 128
 extern volatile int32_t runwordpad;
 static uint32_t runwordpadready = 0;
@@ -66,11 +81,36 @@ uint8_t data_receptive;
 
 void SystemInit48HSIUNSAFE( void );
 
-void boot_usercode() {
+static inline void asmDelay(int delay) {
+	asm volatile(
+"1:	c.addi %[delay], -1\n"
+"bne %[delay], x0, 1b\n" :[delay]"+r"(delay)  );
+}
+
+#ifndef USB_PIN_DPU
+extern uint32_t _boot_firmware_xor;
+uint32_t secret_xor __attribute__((section(".secret_address"))) __attribute__((used)) = (uint32_t)(&_boot_firmware_xor);
+// noreturn attribute saves 2-4 bytes. We can use it because we reboot the chip at the end of this function
+void boot_usercode() __attribute__((section(".boot_firmware"))) __attribute__((noinline, noreturn));
+#else
+uint32_t secret_xor __attribute__((section(".secret_address"))) __attribute__((used)) = 0;
+#endif
+
+void boot_usercode()
+{
+#ifdef BOOTLOADER_DEBUG_BOOT
+	GPIOC->CFGLR = (GPIO_Speed_10MHz | GPIO_CNF_OUT_PP)<<(4*0);
+	GPIOC->BSHR = 1<<(0);
+#endif
+#ifndef USB_PIN_DPU
+	LOCAL_EXP(GPIO,USB_PORT)->CFGLR = (GPIO_Speed_10MHz | GPIO_CNF_OUT_PP)<<(4*USB_PIN_DM);
+	LOCAL_EXP(GPIO,USB_PORT)->BSHR = 1<<(USB_PIN_DM + 16);
+	asmDelay(1000000);
+#endif
 	FLASH->BOOT_MODEKEYR = FLASH_KEY1;
 	FLASH->BOOT_MODEKEYR = FLASH_KEY2;
 	FLASH->STATR = 0; // 1<<14 is zero, so, boot user code.
-	FLASH->CTLR = CR_LOCK_Set;
+	// FLASH->CTLR = CR_LOCK_Set;	// Not needed, flash is locked at reboot (soft reboot counts, I checked)
 	PFIC->SCTLR = 1<<31;
 }
 
@@ -196,9 +236,17 @@ int main()
 
 #if defined(BOOTLOADER_BTN_PORT) && defined(BOOTLOADER_BTN_TRIG_LEVEL) && defined(BOOTLOADER_BTN_PIN)
 	#if BOOTLOADER_BTN_TRIG_LEVEL == 0
-		if(LOCAL_EXP(GPIO,BOOTLOADER_BTN_PORT)->INDR & (1<<BOOTLOADER_BTN_PIN)) boot_usercode();
+    #if defined(SOFT_REBOOT_TO_BOOTLOADER)
+      if(LOCAL_EXP(GPIO,BOOTLOADER_BTN_PORT)->INDR & (1<<BOOTLOADER_BTN_PIN) && !(RCC->RSTSCKR == 0x10000000)) boot_usercode();
+    #else
+		  if(LOCAL_EXP(GPIO,BOOTLOADER_BTN_PORT)->INDR & (1<<BOOTLOADER_BTN_PIN)) boot_usercode();
+    #endif
 	#else
-		if((LOCAL_EXP(GPIO,BOOTLOADER_BTN_PORT)->INDR & (1<<BOOTLOADER_BTN_PIN)) == 0) boot_usercode();
+    #if defined(SOFT_REBOOT_TO_BOOTLOADER)
+		  if((LOCAL_EXP(GPIO,BOOTLOADER_BTN_PORT)->INDR & (1<<BOOTLOADER_BTN_PIN)) == 0 && !(RCC->RSTSCKR == 0x10000000)) boot_usercode();
+    #else
+      if((LOCAL_EXP(GPIO,BOOTLOADER_BTN_PORT)->INDR & (1<<BOOTLOADER_BTN_PIN)) == 0) boot_usercode();
+    #endif
 	#endif
 #endif
 

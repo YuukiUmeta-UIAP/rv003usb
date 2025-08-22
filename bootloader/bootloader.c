@@ -87,14 +87,14 @@ static inline void asmDelay(int delay) {
 "bne %[delay], x0, 1b\n" :[delay]"+r"(delay)  );
 }
 
-#ifndef USB_PIN_DPU
-extern uint32_t _boot_firmware_xor;
-uint32_t secret_xor __attribute__((section(".secret_address"))) __attribute__((used)) = (uint32_t)(&_boot_firmware_xor);
-// noreturn attribute saves 2-4 bytes. We can use it because we reboot the chip at the end of this function
-void boot_usercode() __attribute__((section(".boot_firmware"))) __attribute__((noinline, noreturn));
-#else
-uint32_t secret_xor __attribute__((section(".secret_address"))) __attribute__((used)) = 0;
-#endif
+// #ifndef USB_PIN_DPU
+// extern uint32_t _boot_firmware_xor;
+// uint32_t secret_xor __attribute__((section(".secret_address"))) __attribute__((used)) = (uint32_t)(&_boot_firmware_xor);
+// // noreturn attribute saves 2-4 bytes. We can use it because we reboot the chip at the end of this function
+// void boot_usercode() __attribute__((section(".boot_firmware"))) __attribute__((noinline, noreturn));
+// #else
+// uint32_t secret_xor __attribute__((section(".secret_address"))) __attribute__((used)) = 0;
+// #endif
 
 void sysreset_flow()
 {
@@ -268,7 +268,7 @@ int main()
 	NVIC_EnableIRQ( EXTI7_0_IRQn );
 
 	if (!(RCC->RSTSCKR & (1<<26)))
-		boot_usercode();
+		sysreset_flow();
 
 	// Bootloader timeout / localpad: 
 	// localpad counting up to 0 is used for timeout

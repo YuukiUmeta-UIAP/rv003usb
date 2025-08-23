@@ -263,7 +263,7 @@ int main()
 	NVIC_EnableIRQ( EXTI7_0_IRQn );
 
 	if (!(RCC->RSTSCKR & (1<<26)))
-		sysreset_flow();
+		boot_usercode();
 
 	// Bootloader timeout / localpad: 
 	// localpad counting up to 0 is used for timeout

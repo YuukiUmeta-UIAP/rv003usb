@@ -4,73 +4,61 @@
 #include "rv003usb.h"
 #include "ch32v003_GPIO_branchless.h"
 
+// Set number from belows
+// 		1: Left V1.1 board
+// 		2: Right V1.1 board
+#define BOARD_LORR 1
+
 // Define Output Pins
+#define GPIO_OUT_PD0  GPIOv_from_PORT_PIN(GPIO_port_D, 0)
 #define GPIO_OUT_PC7  GPIOv_from_PORT_PIN(GPIO_port_C, 7)
-#define GPIO_OUT_PC6  GPIOv_from_PORT_PIN(GPIO_port_C, 6)
-#define GPIO_OUT_PC5  GPIOv_from_PORT_PIN(GPIO_port_C, 5)
+#define GPIO_OUT_PA2  GPIOv_from_PORT_PIN(GPIO_port_A, 2)
+#define GPIO_OUT_PA1  GPIOv_from_PORT_PIN(GPIO_port_A, 1)
 #define GPIO_OUT_PC4  GPIOv_from_PORT_PIN(GPIO_port_C, 4)
-#define GPIO_OUT_PD7  GPIOv_from_PORT_PIN(GPIO_port_D, 7)
-#define GPIO_OUT_PC2  GPIOv_from_PORT_PIN(GPIO_port_C, 2)
-#define GPIO_OUT_PC1  GPIOv_from_PORT_PIN(GPIO_port_C, 1)
-#define GPIO_OUT_PD1  GPIOv_from_PORT_PIN(GPIO_port_D, 1)
+#define GPIO_OUT_PD2  GPIOv_from_PORT_PIN(GPIO_port_D, 2)
 
 // Define Input Pins
-#define GPIO_IN_PD0   GPIOv_from_PORT_PIN(GPIO_port_D, 0)
-#define GPIO_IN_PD2   GPIOv_from_PORT_PIN(GPIO_port_D, 2)
-#define GPIO_IN_PD5   GPIOv_from_PORT_PIN(GPIO_port_D, 5)
-#define GPIO_IN_PD6   GPIOv_from_PORT_PIN(GPIO_port_D, 6)
 #define GPIO_IN_PC3   GPIOv_from_PORT_PIN(GPIO_port_C, 3)
-#define GPIO_IN_PA1   GPIOv_from_PORT_PIN(GPIO_port_A, 1)
-#define GPIO_IN_PA2   GPIOv_from_PORT_PIN(GPIO_port_A, 2)
-#define GPIO_IN_PC0   GPIOv_from_PORT_PIN(GPIO_port_C, 0)
+#define GPIO_IN_PD1   GPIOv_from_PORT_PIN(GPIO_port_D, 1)
+#define GPIO_IN_PC5   GPIOv_from_PORT_PIN(GPIO_port_C, 5)
+#define GPIO_IN_PC6   GPIOv_from_PORT_PIN(GPIO_port_C, 6)
+
 // Define Number of Rows and Columns
-#define NUM_COLS 8
-#define NUM_ROWS 8
+#define NUM_COLS 6
+#define NUM_ROWS 4
 
 // Define Columns (Outputs)
 const int columns_ports[NUM_COLS] = {
-	GPIO_port_C, // Column 0 - PC7
-	GPIO_port_C, // Column 1 - PC6
-	GPIO_port_C, // Column 2 - PC5
-	GPIO_port_C, // Column 3 - PC4
-	GPIO_port_D, // Column 4 - PD7
-	GPIO_port_C, // Column 5 - PC2
-	GPIO_port_C, // Column 6 - PC1
-	GPIO_port_D  // Column 7 - PD1
+	GPIO_port_D, // Column 0 - PD0
+	GPIO_port_C, // Column 1 - PC7
+	GPIO_port_A, // Column 2 - PA2
+	GPIO_port_A, // Column 3 - PA1
+	GPIO_port_C, // Column 4 - PC4
+	GPIO_port_D, // Column 5 - PD2
 };
 
 const uint8_t columns_pins[NUM_COLS] = {
+	0, // PD0
 	7, // PC7
-	6, // PC6
-	5, // PC5
+	2, // PA2
+	1, // PA1
 	4, // PC4
-	7, // PD7
-	2, // PC2
-	1, // PC1
-	0  // PD1
+	2, // PD2
 };
 
 // Define Rows (Inputs)
 const int rows_ports[NUM_ROWS] = {
-	GPIO_port_D, // Row 0 - PD0
-	GPIO_port_D, // Row 1 - PD2
-	GPIO_port_D, // Row 2 - PD5
-	GPIO_port_D, // Row 3 - PD6
-	GPIO_port_C, // Row 4 - PC3
-	GPIO_port_A, // Row 5 - PA1
-	GPIO_port_A, // Row 6 - PA2
-	GPIO_port_C,  // Row 7 - PC0
+	GPIO_port_C, // Row 0 - PC3
+	GPIO_port_D, // Row 1 - PD1
+	GPIO_port_C, // Row 2 - PC5
+	GPIO_port_C, // Row 3 - PC6
 };
 
 const uint8_t rows_pins[NUM_ROWS] = {
-	1, // PD0
-	2, // PD2
-	5, // PD5
-	6, // PD6
 	3, // PC3
-	1, // PA1
-	2, // PA2
-	0,  // PC0
+	1, // PD1
+	5, // PC5
+	6, // PC6
 };
 
 // Define HID Usage IDs (Partial List)
@@ -159,26 +147,35 @@ const uint8_t rows_pins[NUM_ROWS] = {
 #define HID_KEY_INSERT     0x49
 #define HID_KEY_HOME       0x4A
 
-const uint8_t keymap[NUM_ROWS][NUM_COLS] = {
-	{ HID_KEY_6, HID_KEY_5, HID_KEY_4, HID_KEY_3, HID_KEY_2, HID_KEY_1, HID_KEY_GRAVE, HID_KEY_ESC },
-	{ HID_KEY_7, HID_KEY_8, HID_KEY_9, HID_KEY_0, HID_KEY_MINUS, HID_KEY_EQUAL, HID_KEY_BACKSPACE, HID_KEY_ENTER },
-	{ HID_KEY_LEFTBRACE, HID_KEY_RIGHTBRACE, HID_KEY_P, HID_KEY_O, HID_KEY_I, HID_KEY_U, HID_KEY_Y, HID_KEY_T },
-	{ HID_KEY_CAPSLOCK, HID_KEY_A, HID_KEY_S, HID_KEY_TAB, HID_KEY_Q, HID_KEY_W, HID_KEY_E, HID_KEY_R },
-	{ HID_KEY_SEMICOLON, HID_KEY_L, HID_KEY_K, HID_KEY_J, HID_KEY_H, HID_KEY_G, HID_KEY_F, HID_KEY_D },
-	{ HID_KEY_N, HID_KEY_M, HID_KEY_COMMA, HID_KEY_DOT, HID_KEY_SLASH, HID_KEY_RIGHT_SHIFT, HID_KEY_BACKSLASH, HID_KEY_QUOTE },
-	{ HID_KEY_LEFT_CTRL, HID_KEY_LEFT_SHIFT, HID_KEY_SLASH, HID_KEY_Z, HID_KEY_X, HID_KEY_C, HID_KEY_V, HID_KEY_B },
-	{ HID_KEY_FN, HID_KEY_LEFT_WIN, HID_KEY_LEFT_ALT, HID_KEY_RIGHT_ALT, HID_KEY_RIGHT_CTRL, HID_KEY_DEL, HID_KEY_PTRSC, HID_KEY_SPACE }
-};
-const uint8_t keymap2[NUM_ROWS][NUM_COLS] = {
-	{ HID_KEY_F6, HID_KEY_F5, HID_KEY_F4, HID_KEY_F3, HID_KEY_F2, HID_KEY_F1, HID_KEY_GRAVE, HID_KEY_ESC },
-	{ HID_KEY_F7, HID_KEY_F8, HID_KEY_F9, HID_KEY_F10, HID_KEY_F11, HID_KEY_F12, HID_KEY_BACKSPACE, HID_KEY_ENTER },
-	{ HID_KEY_LEFTBRACE, HID_KEY_RIGHTBRACE, HID_KEY_P, HID_KEY_O, HID_KEY_I, HID_KEY_U, HID_KEY_Y, HID_KEY_T },
-	{ HID_KEY_CAPSLOCK, HID_KEY_LEFT, HID_KEY_DOWN, HID_KEY_TAB, HID_KEY_Q, HID_KEY_UP, HID_KEY_E, HID_KEY_R },
-	{ HID_KEY_SEMICOLON, HID_KEY_L, HID_KEY_K, HID_KEY_J, HID_KEY_H, HID_KEY_G, HID_KEY_F, HID_KEY_RIGHT },
-	{ HID_KEY_N, HID_KEY_M, HID_KEY_COMMA, HID_KEY_DOT, HID_KEY_SLASH, HID_KEY_RIGHT_SHIFT, HID_KEY_BACKSLASH, HID_KEY_QUOTE },
-	{ HID_KEY_LEFT_CTRL, HID_KEY_LEFT_SHIFT, HID_KEY_SLASH, HID_KEY_Z, HID_KEY_X, HID_KEY_C, HID_KEY_V, HID_KEY_B },
-	{ HID_KEY_FN, HID_KEY_LEFT_WIN, HID_KEY_LEFT_ALT, HID_KEY_RIGHT_ALT, HID_KEY_RIGHT_CTRL, HID_KEY_INSERT, HID_KEY_HOME, HID_KEY_SPACE }
-};
+#if BOARD_LORR == 1
+	const uint8_t keymap[NUM_ROWS][NUM_COLS] = { // Left V1.1 board keymap 1
+		{ HID_KEY_TAB, HID_KEY_Q, HID_KEY_W, HID_KEY_E, HID_KEY_R, HID_KEY_T },
+		{ HID_KEY_CAPSLOCK, HID_KEY_A, HID_KEY_S, HID_KEY_D, HID_KEY_F, HID_KEY_G },
+		{ HID_KEY_LEFT_SHIFT, HID_KEY_Z, HID_KEY_X, HID_KEY_C, HID_KEY_V, HID_KEY_B },
+		{ HID_KEY_LEFT_CTRL, HID_KEY_LEFT_WIN, HID_KEY_LEFT_ALT, HID_KEY_FN, HID_KEY_SPACE, HID_KEY_FN }
+	};
+	const uint8_t keymap2[NUM_ROWS][NUM_COLS] = { // Left V1.1 board keymap 2 when HID_KEY_FN pushed
+		{ HID_KEY_TAB, HID_KEY_1, HID_KEY_2, HID_KEY_3, HID_KEY_4, HID_KEY_5 },
+		{ HID_KEY_CAPSLOCK, HID_KEY_F1, HID_KEY_F2, HID_KEY_F3, HID_KEY_F4, HID_KEY_F5 },
+		{ HID_KEY_LEFT_SHIFT, HID_KEY_Z, HID_KEY_X, HID_KEY_C, HID_KEY_V, HID_KEY_B },
+		{ HID_KEY_LEFT_CTRL, HID_KEY_LEFT_WIN, HID_KEY_LEFT_ALT, HID_KEY_FN, HID_KEY_SPACE, HID_KEY_FN }
+	};
+#elif BOARD_LORR == 2
+	const uint8_t keymap[NUM_ROWS][NUM_COLS] = { // Right V1.1 board keymap 1
+		{ HID_KEY_Y, HID_KEY_U, HID_KEY_I, HID_KEY_O, HID_KEY_P, HID_KEY_ENTER },
+		{ HID_KEY_H, HID_KEY_J, HID_KEY_K, HID_KEY_L, HID_KEY_SEMICOLON, HID_KEY_ESC },
+		{ HID_KEY_N, HID_KEY_M, HID_KEY_COMMA, HID_KEY_DOT, HID_KEY_RIGHT_SHIFT, HID_KEY_FN },
+		{ HID_KEY_BACKSPACE, HID_KEY_FN, HID_KEY_GRAVE, HID_KEY_RIGHT_ALT, HID_KEY_ESC, HID_KEY_RIGHT_CTRL }
+	};
+	const uint8_t keymap2[NUM_ROWS][NUM_COLS] = { // Right V1.1 board keymap 2 when HID_KEY_FN pushed
+		{ HID_KEY_6, HID_KEY_7, HID_KEY_8, HID_KEY_9, HID_KEY_0, HID_KEY_ENTER },
+		{ HID_KEY_F6, HID_KEY_F7, HID_KEY_F8, HID_KEY_F9, HID_KEY_F10, HID_KEY_ESC },
+		{ HID_KEY_F11, HID_KEY_F12, HID_KEY_DOWN, HID_KEY_UP, HID_KEY_RIGHT_SHIFT, HID_KEY_FN },
+		{ HID_KEY_DEL, HID_KEY_FN, HID_KEY_LEFT, HID_KEY_RIGHT_ALT, HID_KEY_RIGHT, HID_KEY_RIGHT_CTRL }
+	};
+#else
+    #error Set number error
+#endif
 
 // Button Matrix State
 typedef struct {
@@ -284,7 +281,13 @@ void ButtonMatrix_Scan_Debounced(ButtonMatrix* matrix, DebounceInfo* db_info, ui
 				else if(keymap[roww][coll] == HID_KEY_RIGHT_SHIFT)keypressed[1] |= 0b00100000;
 				else if(keymap[roww][coll] == HID_KEY_RIGHT_ALT)keypressed[1] |= 0b01000000;
 				else if(kpc<6){
-					if(matrix->debounced_state[7][0] == 1){
+#if BOARD_LORR == 1
+					if(matrix->debounced_state[3][3] == 1){ // Left V1.1 board
+#elif BOARD_LORR == 2
+					if(matrix->debounced_state[3][1] == 1){ // Right V1.1 board
+#else
+    #error Set number error
+#endif
 						keypressed[2+kpc] = keymap2[roww][coll];
 					}else{
 						keypressed[2+kpc] = keymap[roww][coll];

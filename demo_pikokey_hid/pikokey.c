@@ -13,8 +13,8 @@ int main()
 	GPIO_Init_All();
 
 	// Convert PD1 from SWIO to GPIO
-	AFIO->PCFR1 &= ~(AFIO_PCFR1_SWJ_CFG);
-	AFIO->PCFR1 |= AFIO_PCFR1_SWJ_CFG_DISABLE;
+	AFIO->PCFR1 &= ~(AFIO_PCFR1_SWCFG);
+	AFIO->PCFR1 |= AFIO_PCFR1_SWCFG_DISABLE;
 
 	ButtonMatrix_Init(&btn_matrix); // Initialize button matrix state
 	Debounce_Init(&debounce_info); // Initialize debounce info
@@ -34,7 +34,7 @@ int main()
 
 		// Scan the button matrix with debouncing
 		ButtonMatrix_Scan_Debounced(&btn_matrix, &debounce_info, current_time);
-		Delay_Us(10); // Smaller is better, but too small causes hanging. Increase this delay when key map larger.
+		Delay_Us(15); // Smaller is better, but too small causes hanging. Increase this delay when key map larger.
 
 	}
 }
